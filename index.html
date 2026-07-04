@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlexSpace — Premium Community Facility Reservations</title>
+  <meta name="description" content="FlexSpace is a premium resource reservation platform for gated communities. Book badminton courts, clubhouses, and meeting rooms with ease." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- GSAP CDN for animations -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js" defer></script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       NAVIGATION BAR
+  ═══════════════════════════════════════════ -->
+  <nav id="navbar" class="glass-nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo" aria-label="FlexSpace Home">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">Flex<span class="logo-highlight">Space</span></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#hero" class="nav-link active" data-section="hero">Home</a></li>
+        <li><a href="#facilities" class="nav-link" data-section="facilities">Facilities</a></li>
+        <li><a href="#schedule" class="nav-link" data-section="schedule">Schedule</a></li>
+        <li id="navDashboardLink" style="display:none;"><a href="#dashboard" class="nav-link" data-section="dashboard">My Bookings</a></li>
+      </ul>
+
+      <!-- Auth Buttons (shown when logged out) -->
+      <div class="nav-auth" id="navAuthButtons">
+        <button class="nav-auth-btn" id="btnOpenLogin">Login</button>
+        <button class="nav-cta" id="btnOpenRegister">Sign Up</button>
+      </div>
+
+      <!-- User Menu (shown when logged in) -->
+      <div class="nav-user-menu" id="navUserMenu" style="display:none;">
+        <button class="user-avatar-btn" id="userAvatarBtn">
+          <span class="user-avatar" id="userAvatarInitial">A</span>
+          <span class="user-name-display" id="userNameDisplay">User</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="user-dropdown" id="userDropdown">
+          <a href="#dashboard" class="dropdown-item" id="dropdownDashboard">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            My Bookings
+          </a>
+          <button class="dropdown-item dropdown-logout" id="btnLogout">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile hamburger -->
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════
+       HERO SECTION
+  ═══════════════════════════════════════════ -->
+  <section id="hero" class="hero-section">
+    <!-- Animated 3D floating shapes background -->
+    <div class="hero-shapes" aria-hidden="true">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      <div class="shape shape-4"></div>
+      <div class="shape shape-5"></div>
+    </div>
+
+    <!-- 3D Orb Canvas -->
+    <canvas id="orbCanvas" class="hero-orb" aria-hidden="true"></canvas>
+
+    <div class="hero-content">
+      <p class="hero-tagline" id="heroTagline">✦ Premium Community Living</p>
+      <h1 class="hero-title" id="heroTitle">
+        Reserve Your <span class="gradient-text">Perfect Space</span>
+      </h1>
+      <p class="hero-subtitle" id="heroSubtitle">
+        Book world-class facilities in your community — badminton courts, 
+        cricket pitches, basketball courts, and more — all at your fingertips.
+      </p>
+      <div class="hero-actions" id="heroActions">
+        <button class="btn btn-primary btn-glow" onclick="scrollToSection('facilities')">
+          <span>Book Now</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+        <button class="btn btn-outline" onclick="scrollToSection('facilities')">
+          Explore Facilities
+        </button>
+      </div>
+      <!-- Stats bar -->
+      <div class="hero-stats" id="heroStats">
+        <div class="stat-item">
+          <span class="stat-number" data-count="150">0</span>
+          <span class="stat-label">Happy Residents</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number" data-count="7">0</span>
+          <span class="stat-label">Premium Facilities</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number" data-count="500">0</span>
+          <span class="stat-label">Bookings Made</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       FACILITIES SECTION
+  ═══════════════════════════════════════════ -->
+  <section id="facilities" class="facilities-section">
+    <div class="section-container">
+      <p class="section-eyebrow">Our Spaces</p>
+      <h2 class="section-title">World-Class <span class="gradient-text">Facilities</span></h2>
+      <p class="section-subtitle">
+        Beautifully maintained spaces designed for your lifestyle. 
+        Select a facility below to view availability and book instantly.
+      </p>
+
+      <div class="facilities-grid" id="facilitiesGrid">
+        <!-- Cards injected by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SCHEDULE / CALENDAR SECTION
+  ═══════════════════════════════════════════ -->
+  <section id="schedule" class="schedule-section">
+    <div class="section-container">
+      <div class="schedule-header" id="scheduleHeader" style="display:none;">
+        <button class="btn-back" id="btnBack" aria-label="Back to facilities">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back
+        </button>
+        <div class="schedule-title-group">
+          <p class="section-eyebrow" id="scheduleEyebrow">Badminton Court</p>
+          <h2 class="section-title">Select a <span class="gradient-text">Time Slot</span></h2>
+        </div>
+      </div>
+
+      <!-- Day selector tabs -->
+      <div class="day-tabs" id="dayTabs" style="display:none;">
+        <button class="day-tab active" data-day="today" id="tabToday">Today</button>
+        <button class="day-tab" data-day="tomorrow" id="tabTomorrow">Tomorrow</button>
+      </div>
+
+      <!-- Time slot grid -->
+      <div class="slots-grid" id="slotsGrid" style="display:none;">
+        <!-- Slots injected by JS -->
+      </div>
+
+      <!-- Legend -->
+      <div class="slots-legend" id="slotsLegend" style="display:none;">
+        <div class="legend-item"><span class="legend-dot available"></span> Available</div>
+        <div class="legend-item"><span class="legend-dot booked"></span> Booked</div>
+        <div class="legend-item"><span class="legend-dot selected"></span> Selected</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       USER DASHBOARD SECTION
+  ═══════════════════════════════════════════ -->
+  <section id="dashboard" class="dashboard-section" style="display:none;">
+    <div class="section-container">
+      <p class="section-eyebrow">Your Account</p>
+      <h2 class="section-title">My <span class="gradient-text">Bookings</span></h2>
+      <p class="section-subtitle">
+        View and manage your upcoming facility reservations.
+      </p>
+
+      <div class="dashboard-grid" id="dashboardGrid">
+        <!-- Booking cards injected by JS -->
+      </div>
+
+      <div class="dashboard-empty" id="dashboardEmpty" style="display:none;">
+        <div class="empty-icon">📅</div>
+        <h3>No Bookings Yet</h3>
+        <p>You haven't made any reservations. Explore our facilities and book your first slot!</p>
+        <button class="btn btn-primary btn-glow" onclick="scrollToSection('facilities')">
+          <span>Browse Facilities</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SUB-UNIT SELECTION MODAL
+  ═══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="unitModalOverlay">
+    <div class="modal glass-card" id="unitModal" role="dialog" aria-labelledby="unitModalTitle">
+      <button class="modal-close" id="unitModalClose" aria-label="Close modal">✕</button>
+      <div class="modal-header">
+        <span class="modal-icon" id="unitModalIcon">🏸</span>
+        <h3 id="unitModalTitle">Select a Court</h3>
+        <p class="modal-meta" id="unitModalMeta">Choose which court you'd like to book</p>
+      </div>
+      <div class="unit-selector" id="unitSelector">
+        <!-- Unit buttons injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       BOOKING CONFIRMATION MODAL
+  ═══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal glass-card" id="bookingModal" role="dialog" aria-labelledby="modalTitle">
+      <button class="modal-close" id="modalClose" aria-label="Close modal">✕</button>
+      <div class="modal-header">
+        <span class="modal-icon">📅</span>
+        <h3 id="modalTitle">Confirm Your Booking</h3>
+        <p class="modal-meta" id="modalMeta">Badminton Court · 10:00 AM — 11:00 AM</p>
+      </div>
+      <div class="modal-confirm-details" id="modalConfirmDetails">
+        <p>Click below to confirm this reservation under your account.</p>
+      </div>
+      <button type="button" class="btn btn-primary btn-full btn-glow" id="btnConfirmBooking">
+        <span>Confirm Booking</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       LOGIN MODAL
+  ═══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="loginModalOverlay">
+    <div class="modal glass-card" id="loginModal" role="dialog" aria-labelledby="loginModalTitle">
+      <button class="modal-close" id="loginModalClose" aria-label="Close modal">✕</button>
+      <div class="modal-header">
+        <span class="modal-icon">🔐</span>
+        <h3 id="loginModalTitle">Welcome Back</h3>
+        <p class="modal-meta">Sign in to your FlexSpace account</p>
+      </div>
+      <form id="loginForm" class="modal-form" autocomplete="off">
+        <div class="form-group">
+          <label for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" placeholder="e.g. arjun@email.com" required />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter your password" required />
+        </div>
+        <div class="form-error" id="loginError" style="display:none;"></div>
+        <button type="submit" class="btn btn-primary btn-full btn-glow">
+          <span>Sign In</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </button>
+      </form>
+      <p class="modal-switch">
+        Don't have an account? <button type="button" class="link-btn" id="switchToRegister">Sign Up</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       REGISTER MODAL
+  ═══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="registerModalOverlay">
+    <div class="modal glass-card" id="registerModal" role="dialog" aria-labelledby="registerModalTitle">
+      <button class="modal-close" id="registerModalClose" aria-label="Close modal">✕</button>
+      <div class="modal-header">
+        <span class="modal-icon">✨</span>
+        <h3 id="registerModalTitle">Create Account</h3>
+        <p class="modal-meta">Join FlexSpace to start booking</p>
+      </div>
+      <form id="registerForm" class="modal-form" autocomplete="off">
+        <div class="form-group">
+          <label for="registerName">Full Name</label>
+          <input type="text" id="registerName" placeholder="e.g. Arjun Mehta" required />
+        </div>
+        <div class="form-group">
+          <label for="registerEmail">Email Address</label>
+          <input type="email" id="registerEmail" placeholder="e.g. arjun@email.com" required />
+        </div>
+        <div class="form-group">
+          <label for="registerPassword">Password</label>
+          <input type="password" id="registerPassword" placeholder="Min. 6 characters" required minlength="6" />
+        </div>
+        <div class="form-error" id="registerError" style="display:none;"></div>
+        <button type="submit" class="btn btn-primary btn-full btn-glow">
+          <span>Create Account</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        </button>
+      </form>
+      <p class="modal-switch">
+        Already have an account? <button type="button" class="link-btn" id="switchToLogin">Sign In</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SUCCESS TOAST
+  ═══════════════════════════════════════════ -->
+  <div class="toast" id="toast">
+    <span class="toast-icon">✓</span>
+    <span class="toast-msg" id="toastMsg">Booking confirmed!</span>
+  </div>
+
+  <!-- Error Toast -->
+  <div class="toast toast-error" id="toastError">
+    <span class="toast-icon toast-icon-error">✕</span>
+    <span class="toast-msg" id="toastErrorMsg">Something went wrong.</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════ -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span class="footer-logo">◈ Flex<span class="logo-highlight">Space</span></span>
+      <p>© 2026 FlexSpace. Crafted for premium communities.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
