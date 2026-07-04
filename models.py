@@ -29,6 +29,7 @@ def init_db():
             name        TEXT NOT NULL,
             email       TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
+            flat_no     TEXT DEFAULT '',
             role        TEXT NOT NULL DEFAULT 'resident' CHECK(role IN ('resident', 'admin')),
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -64,6 +65,13 @@ def init_db():
             WHERE status = 'confirmed';
     """)
 
+    # Migration: add flat_no column to existing databases
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN flat_no TEXT DEFAULT ''")
+        conn.commit()
+    except Exception:
+        pass  # Column already exists
+
     conn.commit()
     conn.close()
 
@@ -86,13 +94,13 @@ def get_user_by_id(user_id):
     return dict(user) if user else None
 
 
-def create_user(name, email, password_hash, role='resident'):
+def create_user(name, email, password_hash, role='resident', flat_no=''):
     """Insert a new user. Returns the new user id."""
     conn = get_db()
     try:
         cursor = conn.execute(
-            "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)",
-            (name, email, password_hash, role)
+            "INSERT INTO users (name, email, password_hash, role, flat_no) VALUES (?, ?, ?, ?, ?)",
+            (name, email, password_hash, role, flat_no)
         )
         conn.commit()
         user_id = cursor.lastrowid
@@ -140,7 +148,7 @@ def get_bookings_for_facility(facility_id, date):
     """Get all confirmed bookings for a facility on a given date."""
     conn = get_db()
     rows = conn.execute(
-        """SELECT b.*, u.name as user_name, u.email as user_email
+        """SELECT b.*, u.name as user_name, u.email as user_email, u.flat_no as user_flat_no
            FROM bookings b
            JOIN users u ON b.user_id = u.id
            WHERE b.facility_id = ? AND b.date = ? AND b.status = 'confirmed'
@@ -215,7 +223,7 @@ def get_all_bookings_for_date(date):
     """Admin: get all confirmed bookings for a given date, with user and facility info."""
     conn = get_db()
     rows = conn.execute(
-        """SELECT b.*, u.name as user_name, u.email as user_email,
+        """SELECT b.*, u.name as user_name, u.email as user_email, u.flat_no as user_flat_no,
                   f.name as facility_name, f.emoji as facility_emoji,
                   f.parent_id, pf.name as parent_name, pf.emoji as parent_emoji
            FROM bookings b

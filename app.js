@@ -171,6 +171,7 @@ const dom = {
   registerModalClose:   $('#registerModalClose'),
   registerForm:         $('#registerForm'),
   registerName:         $('#registerName'),
+  registerFlatNo:       $('#registerFlatNo'),
   registerEmail:        $('#registerEmail'),
   registerPassword:     $('#registerPassword'),
   registerError:        $('#registerError'),
@@ -207,7 +208,8 @@ function updateAuthUI() {
     dom.navUserMenu.style.display = 'block';
     dom.navDashboardLink.style.display = 'list-item';
     dom.userAvatarInitial.textContent = state.user.name.charAt(0).toUpperCase();
-    dom.userNameDisplay.textContent = state.user.name;
+    const flatDisplay = state.user.flat_no ? ` (${state.user.flat_no})` : '';
+    dom.userNameDisplay.textContent = state.user.name + flatDisplay;
   } else {
     dom.navAuthButtons.style.display = 'flex';
     dom.navUserMenu.style.display = 'none';
@@ -253,10 +255,11 @@ async function handleRegister(e) {
   dom.registerError.style.display = 'none';
 
   const name = dom.registerName.value.trim();
+  const flat_no = dom.registerFlatNo ? dom.registerFlatNo.value.trim() : '';
   const email = dom.registerEmail.value.trim();
   const password = dom.registerPassword.value;
 
-  if (!name || !email || !password) {
+  if (!name || !flat_no || !email || !password) {
     showFormError(dom.registerError, 'Please fill in all fields.');
     return;
   }
@@ -266,7 +269,7 @@ async function handleRegister(e) {
     return;
   }
 
-  const data = await API.post('/api/auth/register', { name, email, password });
+  const data = await API.post('/api/auth/register', { name, email, password, flat_no });
 
   if (data._status === 201) {
     state.user = data.user;

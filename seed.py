@@ -129,8 +129,8 @@ def seed():
         print("[*] Creating default admin account...")
         pw_hash = hash_password('admin123')
         cursor.execute(
-            "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)",
-            ('Admin', admin_email, pw_hash, 'admin')
+            "INSERT INTO users (name, email, password_hash, role, flat_no) VALUES (?, ?, ?, ?, ?)",
+            ('Admin', admin_email, pw_hash, 'admin', 'A-101')
         )
         conn.commit()
         print(f"   [+] Admin: {admin_email} / admin123")

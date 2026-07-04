@@ -93,6 +93,7 @@ function renderTable(bookings) {
         <td class="facility-cell">${b.facility_emoji} ${b.facility_name}</td>
         <td>${b.label}</td>
         <td>${b.user_name}</td>
+        <td>${b.user_flat_no || '—'}</td>
         <td>${b.user_email}</td>
         <td>${bookedAt}</td>
         <td>

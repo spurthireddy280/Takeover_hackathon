@@ -105,6 +105,7 @@ def register():
     name = (data.get('name') or '').strip()
     email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
+    flat_no = (data.get('flat_no') or '').strip().upper()
 
     # Validation
     errors = []
@@ -114,6 +115,8 @@ def register():
         errors.append('A valid email is required.')
     if len(password) < 6:
         errors.append('Password must be at least 6 characters.')
+    if not flat_no:
+        errors.append('Flat number is required.')
 
     if errors:
         return jsonify({'error': ' '.join(errors)}), 400
@@ -124,7 +127,7 @@ def register():
 
     # Create user
     pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-    user_id = create_user(name, email, pw_hash, role='resident')
+    user_id = create_user(name, email, pw_hash, role='resident', flat_no=flat_no)
 
     if not user_id:
         return jsonify({'error': 'Registration failed. Please try again.'}), 500
@@ -135,7 +138,7 @@ def register():
 
     return jsonify({
         'message': 'Account created successfully!',
-        'user': {'id': user_id, 'name': name, 'email': email, 'role': 'resident'}
+        'user': {'id': user_id, 'name': name, 'email': email, 'role': 'resident', 'flat_no': flat_no}
     }), 201
 
 
@@ -169,7 +172,8 @@ def login():
             'id': user['id'],
             'name': user['name'],
             'email': user['email'],
-            'role': user['role']
+            'role': user['role'],
+            'flat_no': user.get('flat_no', '')
         }
     })
 
@@ -197,7 +201,8 @@ def me():
             'id': user['id'],
             'name': user['name'],
             'email': user['email'],
-            'role': user['role']
+            'role': user['role'],
+            'flat_no': user.get('flat_no', '')
         }
     })
 
@@ -253,7 +258,11 @@ def facility_slots(facility_id):
             'available': booking is None,
         }
         if booking:
-            slot['booked_by'] = booking['user_name']
+            booked_by = booking['user_name']
+            flat = booking.get('user_flat_no', '')
+            if flat:
+                booked_by = f"{booked_by} ({flat})"
+            slot['booked_by'] = booked_by
             slot['booking_id'] = booking['id']
         slots.append(slot)
 
@@ -405,6 +414,7 @@ def admin_all_bookings():
             'id': b['id'],
             'user_name': b['user_name'],
             'user_email': b['user_email'],
+            'user_flat_no': b.get('user_flat_no', ''),
             'facility_name': display_name,
             'facility_emoji': emoji,
             'date': b['date'],
