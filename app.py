@@ -8,7 +8,7 @@ import functools
 from datetime import date, timedelta
 
 from flask import Flask, request, jsonify, session, send_from_directory, send_file
-from flask_bcrypt import Bcrypt
+from flask_bcrypt import Bcrypt  # type: ignore
 
 from models import (
     init_db, get_user_by_email, get_user_by_id, create_user,
