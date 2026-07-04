@@ -36,6 +36,46 @@ const API = {
 
 
 // ─────────────────────────────────────────────
+//  THEME TOGGLE (Light / Dark)
+// ─────────────────────────────────────────────
+
+function initThemeToggle() {
+  const toggle = document.getElementById('themeToggle');
+  const sunIcon = document.getElementById('themeIconSun');
+  const moonIcon = document.getElementById('themeIconMoon');
+  if (!toggle || !sunIcon || !moonIcon) return;
+
+  // Load saved theme
+  const saved = localStorage.getItem('flexspace-theme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    sunIcon.style.display = 'none';
+    moonIcon.style.display = 'block';
+  }
+
+  toggle.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    if (current === 'light') {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('flexspace-theme', 'dark');
+      sunIcon.style.display = 'block';
+      moonIcon.style.display = 'none';
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('flexspace-theme', 'light');
+      sunIcon.style.display = 'none';
+      moonIcon.style.display = 'block';
+    }
+  });
+}
+
+/** Check if light mode is active */
+function isLightMode() {
+  return document.documentElement.getAttribute('data-theme') === 'light';
+}
+
+
+// ─────────────────────────────────────────────
 //  DATE HELPERS
 // ─────────────────────────────────────────────
 
@@ -194,8 +234,15 @@ async function handleLogin(e) {
     state.user = data.user;
     updateAuthUI();
     closeAllModals();
-    showToast(`Welcome back, ${data.user.name}!`);
     dom.loginForm.reset();
+
+    // If admin, redirect to admin dashboard
+    if (data.user.role === 'admin') {
+      window.location.href = '/admin';
+      return;
+    }
+
+    showToast(`Welcome back, ${data.user.name}!`);
   } else {
     showFormError(dom.loginError, data.error || 'Login failed.');
   }
@@ -731,23 +778,25 @@ function initOrbCanvas() {
     ctx.clearRect(0, 0, W, H);
     frame++;
 
+    const light = isLightMode();
+
     // ── Core orb glow (pulsing) ──
     const pulse = Math.sin(frame * 0.015) * 0.1 + 0.9;
     const orbR = (W * 0.28) * pulse;
 
     // Outer glow
     const glow = ctx.createRadialGradient(cx, cy, orbR * 0.3, cx, cy, orbR * 1.6);
-    glow.addColorStop(0, 'rgba(168, 85, 247, 0.15)');
-    glow.addColorStop(0.5, 'rgba(99, 102, 241, 0.06)');
+    glow.addColorStop(0, light ? 'rgba(139, 92, 246, 0.2)' : 'rgba(168, 85, 247, 0.15)');
+    glow.addColorStop(0.5, light ? 'rgba(99, 102, 241, 0.08)' : 'rgba(99, 102, 241, 0.06)');
     glow.addColorStop(1, 'rgba(59, 130, 246, 0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, W, H);
 
     // Main orb gradient
     const grad = ctx.createRadialGradient(cx - orbR * 0.25, cy - orbR * 0.25, orbR * 0.1, cx, cy, orbR);
-    grad.addColorStop(0, 'rgba(200, 140, 255, 0.55)');
-    grad.addColorStop(0.4, 'rgba(140, 100, 240, 0.35)');
-    grad.addColorStop(0.7, 'rgba(99, 102, 241, 0.2)');
+    grad.addColorStop(0, light ? 'rgba(139, 92, 246, 0.5)' : 'rgba(200, 140, 255, 0.55)');
+    grad.addColorStop(0.4, light ? 'rgba(99, 102, 241, 0.3)' : 'rgba(140, 100, 240, 0.35)');
+    grad.addColorStop(0.7, light ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.2)');
     grad.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
     ctx.beginPath();
@@ -757,8 +806,8 @@ function initOrbCanvas() {
 
     // Inner bright core
     const core = ctx.createRadialGradient(cx - orbR * 0.15, cy - orbR * 0.15, 0, cx, cy, orbR * 0.5);
-    core.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
-    core.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    core.addColorStop(0, light ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255, 255, 255, 0.25)');
+    core.addColorStop(1, light ? 'rgba(139, 92, 246, 0)' : 'rgba(255, 255, 255, 0)');
     ctx.beginPath();
     ctx.arc(cx, cy, orbR * 0.5, 0, Math.PI * 2);
     ctx.fillStyle = core;
@@ -777,7 +826,7 @@ function initOrbCanvas() {
 
       ctx.beginPath();
       ctx.arc(px, py, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(200, 170, 255, ${alpha})`;
+      ctx.fillStyle = light ? `rgba(139, 92, 246, ${alpha})` : `rgba(200, 170, 255, ${alpha})`;
       ctx.fill();
     });
 
@@ -788,7 +837,8 @@ function initOrbCanvas() {
     ctx.scale(1, 0.35);
     ctx.beginPath();
     ctx.arc(0, 0, orbR * 1.3, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(168, 85, 247, ${0.08 + Math.sin(frame * 0.02) * 0.04})`;
+    const ringAlpha = 0.08 + Math.sin(frame * 0.02) * 0.04;
+    ctx.strokeStyle = light ? `rgba(139, 92, 246, ${ringAlpha + 0.06})` : `rgba(168, 85, 247, ${ringAlpha})`;
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.restore();
@@ -1026,6 +1076,7 @@ function switchDay(day) {
 //  INITIALISATION
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  initThemeToggle();
   bindEvents();
   initNavbarScroll();
   initActiveNavLink();

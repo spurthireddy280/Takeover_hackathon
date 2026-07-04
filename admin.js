@@ -145,8 +145,40 @@ function showToast(message) {
   setTimeout(() => dom.toast.classList.remove('show'), 3500);
 }
 
+// ─── Theme Toggle ───
+function initThemeToggle() {
+  const toggle = document.getElementById('themeToggle');
+  const sunIcon = document.getElementById('themeIconSun');
+  const moonIcon = document.getElementById('themeIconMoon');
+  if (!toggle || !sunIcon || !moonIcon) return;
+
+  const saved = localStorage.getItem('flexspace-theme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    sunIcon.style.display = 'none';
+    moonIcon.style.display = 'block';
+  }
+
+  toggle.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    if (current === 'light') {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('flexspace-theme', 'dark');
+      sunIcon.style.display = 'block';
+      moonIcon.style.display = 'none';
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('flexspace-theme', 'light');
+      sunIcon.style.display = 'none';
+      moonIcon.style.display = 'block';
+    }
+  });
+}
+
 // ─── Init ───
 document.addEventListener('DOMContentLoaded', async () => {
+  initThemeToggle();
+
   // Set initial date
   dom.datePicker.value = currentDate;
 

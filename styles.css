@@ -48,6 +48,210 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+
+/* ─── LIGHT MODE THEME ─── */
+[data-theme="light"] {
+  /* Core palette */
+  --bg-deep:        #f5f3ff;
+  --bg-surface:     #ede9fe;
+  --bg-card:        rgba(255, 255, 255, 0.75);
+  --bg-card-hover:  rgba(255, 255, 255, 0.9);
+
+  /* Glass effect */
+  --glass-bg:       rgba(255, 255, 255, 0.65);
+  --glass-border:   rgba(139, 92, 246, 0.15);
+  --glass-blur:     20px;
+
+  /* Text */
+  --text-primary:   #1e1b4b;
+  --text-secondary: #4c4574;
+  --text-muted:     #8b83aa;
+
+  /* Slot colours */
+  --slot-available:       rgba(16, 185, 129, 0.1);
+  --slot-available-border:rgba(16, 185, 129, 0.4);
+  --slot-available-text:  #059669;
+  --slot-booked:          rgba(239, 68, 68, 0.06);
+  --slot-booked-border:   rgba(239, 68, 68, 0.2);
+  --slot-booked-text:     #9ca3af;
+  --slot-selected:        rgba(139, 92, 246, 0.12);
+  --slot-selected-border: rgba(139, 92, 246, 0.45);
+}
+
+/* Light mode — navbar */
+[data-theme="light"] .glass-nav {
+  background: rgba(245, 243, 255, 0.7);
+}
+[data-theme="light"] .glass-nav.scrolled {
+  background: rgba(245, 243, 255, 0.92);
+  box-shadow: 0 4px 30px rgba(139, 92, 246, 0.08);
+}
+
+/* Light mode — nav link hover */
+[data-theme="light"] .nav-link:hover,
+[data-theme="light"] .nav-link.active {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+/* Light mode — auth btn hover */
+[data-theme="light"] .nav-auth-btn:hover {
+  background: rgba(139, 92, 246, 0.06);
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+/* Light mode — user avatar btn hover */
+[data-theme="light"] .user-avatar-btn:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+/* Light mode — user dropdown */
+[data-theme="light"] .user-dropdown {
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 16px 48px rgba(139, 92, 246, 0.12);
+}
+[data-theme="light"] .dropdown-item:hover {
+  background: rgba(139, 92, 246, 0.06);
+}
+
+/* Light mode — hero section */
+[data-theme="light"] .hero-section {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(139, 92, 246, 0.1) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 20%, rgba(99, 102, 241, 0.06) 0%, transparent 60%),
+    var(--bg-deep);
+}
+
+/* Light mode — hero shapes (softer) */
+[data-theme="light"] .shape { opacity: 0.2; }
+
+/* Light mode — facility card image overlay */
+[data-theme="light"] .facility-card__image-wrap::after {
+  background: linear-gradient(180deg, transparent 50%, rgba(245, 243, 255, 0.9) 100%);
+}
+
+/* Light mode — facility card hover */
+[data-theme="light"] .facility-card:hover {
+  box-shadow: 0 20px 60px rgba(139, 92, 246, 0.1), 0 0 40px rgba(139, 92, 246, 0.04);
+}
+
+/* Light mode — btn outline hover */
+[data-theme="light"] .btn-outline:hover {
+  background: rgba(139, 92, 246, 0.06);
+}
+
+/* Light mode — slot hover */
+[data-theme="light"] .slot:hover:not(.slot--booked) {
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.1);
+}
+
+/* Light mode — day tab hover */
+[data-theme="light"] .day-tab:hover:not(.active) {
+  background: rgba(139, 92, 246, 0.06);
+}
+/* Light mode — btn-back hover */
+[data-theme="light"] .btn-back:hover {
+  background: rgba(139, 92, 246, 0.06);
+}
+
+/* Light mode — modal */
+[data-theme="light"] .modal {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 32px 80px rgba(139, 92, 246, 0.12);
+}
+[data-theme="light"] .modal-overlay {
+  background: rgba(30, 27, 75, 0.25);
+}
+[data-theme="light"] .modal-close {
+  background: rgba(139, 92, 246, 0.06);
+}
+
+/* Light mode — form inputs */
+[data-theme="light"] .form-group input,
+[data-theme="light"] .form-group select {
+  background: rgba(139, 92, 246, 0.04);
+}
+
+/* Light mode — sections background */
+[data-theme="light"] .facilities-section {
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 80%, rgba(99, 102, 241, 0.04) 0%, transparent 60%),
+    var(--bg-deep);
+}
+[data-theme="light"] .dashboard-section {
+  background:
+    radial-gradient(ellipse 50% 40% at 80% 20%, rgba(139, 92, 246, 0.04) 0%, transparent 60%),
+    var(--bg-deep);
+}
+
+/* Light mode — toast */
+[data-theme="light"] .toast {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #059669;
+}
+[data-theme="light"] .toast-icon {
+  background: rgba(16, 185, 129, 0.15);
+}
+[data-theme="light"] .toast-error {
+  background: rgba(239, 68, 68, 0.1);
+}
+[data-theme="light"] .toast-icon-error {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+/* Light mode — mobile menu */
+[data-theme="light"] .nav-links.mobile-open {
+  background: rgba(245, 243, 255, 0.97);
+}
+
+/* Light mode — scrollbar */
+[data-theme="light"]::-webkit-scrollbar-track { background: var(--bg-deep); }
+[data-theme="light"]::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.25); }
+[data-theme="light"]::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.4); }
+
+/* Light mode — admin-specific table rows */
+[data-theme="light"] .admin-table td {
+  border-bottom-color: rgba(139, 92, 246, 0.06);
+}
+[data-theme="light"] .admin-table tbody tr:hover {
+  background: rgba(139, 92, 246, 0.04);
+}
+[data-theme="light"] .admin-table thead {
+  background: rgba(139, 92, 246, 0.06);
+}
+[data-theme="light"] .admin-date-picker {
+  color-scheme: light;
+}
+
+/* ─── THEME TOGGLE BUTTON ─── */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.3s var(--ease-out-expo);
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  background: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.3);
+  color: var(--accent-1);
+  transform: rotate(20deg) scale(1.08);
+}
+
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+  transition: opacity 0.2s ease;
+}
+
 /* ─── RESET & BASE ─── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 

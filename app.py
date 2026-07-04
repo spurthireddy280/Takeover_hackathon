@@ -233,9 +233,18 @@ def facility_slots(facility_id):
     bookings = get_bookings_for_facility(facility_id, date_str)
     booked_hours = {b['start_time']: b for b in bookings}
 
-    # Generate time slots (6 AM to 10 PM)
+    # Determine current hour to filter past slots for today
+    from datetime import datetime
+    is_today = (date_str == date.today().isoformat())
+    current_hour = datetime.now().hour if is_today else 0
+
+    # Generate time slots (6 AM to 10 PM), skipping past slots for today
     slots = []
     for h in range(6, 22):
+        # Skip slots that have already passed today
+        if is_today and h <= current_hour:
+            continue
+
         booking = booked_hours.get(h)
         slot = {
             'start': h,
