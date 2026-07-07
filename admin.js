@@ -16,7 +16,7 @@ const API = {
 };
 
 // ─── State ───
-let currentDate = new Date().toISOString().split('T')[0];
+let currentDate = "";
 
 // ─── DOM ───
 const $ = (sel) => document.querySelector(sel);
