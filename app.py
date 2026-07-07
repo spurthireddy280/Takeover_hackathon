@@ -4,10 +4,14 @@ Handles API routing, authentication, and serves the frontend.
 """
 
 import os
+import io
+import json
+import queue
 import functools
 from datetime import date, timedelta
 
-from flask import Flask, request, jsonify, session, send_from_directory, send_file
+import qrcode
+from flask import Flask, request, jsonify, session, send_from_directory, send_file, Response
 from flask_bcrypt import Bcrypt  # type: ignore
 
 from models import (
@@ -28,6 +32,9 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 bcrypt = Bcrypt(app)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# ─── SSE Client Queues ──────────────────────────────────
+sse_clients = []
 
 
 # ─── Auth Decorators ────────────────────────────────────
@@ -331,6 +338,10 @@ def make_booking():
     if not booking_id:
         return jsonify({'error': 'This time slot is already booked. Please choose another.'}), 409
 
+    # Notify all SSE clients of the slot change
+    for q in sse_clients:
+        q.put('{"updated": true}')
+
     user = get_user_by_id(session['user_id'])
     return jsonify({
         'message': f"Booking confirmed for {user['name']}!",
@@ -384,6 +395,9 @@ def cancel_my_booking(booking_id):
     success = cancel_booking(booking_id, user_id=session['user_id'], is_admin=is_admin)
 
     if success:
+        # Notify all SSE clients of the slot change
+        for q in sse_clients:
+            q.put('{"updated": true}')
         return jsonify({'message': 'Booking cancelled successfully.'})
     else:
         return jsonify({'error': 'Booking not found or you do not have permission to cancel it.'}), 404
@@ -440,6 +454,258 @@ def admin_cancel_booking(booking_id):
 
 
 # ═══════════════════════════════════════════════════════════
+#  QR CODE GATE PASS & VERIFICATION
+# ═══════════════════════════════════════════════════════════
+
+@app.route('/api/bookings/<int:booking_id>/qr')
+@login_required
+def booking_qr(booking_id):
+    """Generate a QR code gate pass image for a booking."""
+    booking = get_booking_by_id(booking_id)
+    if not booking:
+        return jsonify({'error': 'Booking not found'}), 404
+
+    # Only the booking owner can view their gate pass
+    if booking['user_id'] != session['user_id']:
+        return jsonify({'error': 'Access denied'}), 403
+
+    if booking['status'] != 'confirmed':
+        return jsonify({'error': 'Booking is not active'}), 400
+
+    # Build a URL payload for the interactive demo verification
+    base_url = request.host_url.rstrip('/')
+    payload = f"{base_url}/verify/{booking_id}"
+
+    # Generate QR code image
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4
+    )
+    qr.add_data(payload)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color='#1e1b4b', back_color='#f5f3ff')
+
+    # Serve as PNG
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    return send_file(buf, mimetype='image/png', download_name=f'gatepass-{booking_id}.png')
+
+
+@app.route('/verify/<int:booking_id>')
+def verify_pass(booking_id):
+    """Public route for security guards/judges to verify a scanned QR pass."""
+    booking = get_booking_by_id(booking_id)
+
+    # 1. Invalid or Cancelled Pass UI
+    if not booking or booking['status'] != 'confirmed':
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>Invalid Pass</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap" rel="stylesheet" />
+        </head>
+        <body style="font-family: 'Inter', sans-serif; background: #07060e; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box;">
+            <div style="text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.3); padding: 40px 20px; border-radius: 24px; max-width: 400px; width: 100%;">
+                <div style="font-size: 60px; margin-bottom: 20px;">❌</div>
+                <h1 style="color: #ef4444; margin: 0 0 10px 0; font-weight: 800; letter-spacing: 1px;">PASS INVALID</h1>
+                <p style="color: #9b97ad; margin: 0; font-weight: 600;">This booking is expired, cancelled, or does not exist.</p>
+            </div>
+        </body>
+        </html>
+        """, 404
+
+    # 2. Get Data for Valid Pass
+    facility = get_facility_by_id(booking['facility_id'])
+    user = get_user_by_id(booking['user_id'])
+
+    # Build full facility name to include parent category (e.g., "Snooker — Board 1")
+    facility_name = facility['name']
+    if facility.get('parent_id'):
+        parent = get_facility_by_id(facility['parent_id'])
+        if parent:
+            facility_name = f"{parent['name']} — {facility['name'].split(' — ')[-1]}"
+
+    # Format the variables for display
+    time_slot = f"{format_hour(booking['start_time'])} — {format_hour(booking['end_time'])}"
+    flat_no = user.get('flat_no') or 'N/A'
+    booking_date = booking['date']
+    booking_ref = f"FLX-{booking['id']:04d}"
+
+    # 3. Valid Pass Premium UI
+    return f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Gate Pass Verified</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=Poppins:wght@700;800&display=swap" rel="stylesheet" />
+        <style>
+            body {{
+                font-family: 'Inter', sans-serif;
+                background: #07060e;
+                margin: 0;
+                padding: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                box-sizing: border-box;
+            }}
+            .verify-card {{
+                background: rgba(255, 255, 255, 0.03);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid rgba(52, 211, 153, 0.4);
+                border-radius: 24px;
+                padding: 40px 24px;
+                max-width: 420px;
+                width: 100%;
+                text-align: center;
+                box-shadow: 0 20px 40px rgba(52, 211, 153, 0.08);
+            }}
+            .icon-wrap {{
+                width: 80px;
+                height: 80px;
+                background: rgba(52, 211, 153, 0.15);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 24px auto;
+                font-size: 36px;
+                border: 2px solid rgba(52, 211, 153, 0.4);
+                box-shadow: 0 0 20px rgba(52, 211, 153, 0.2);
+                animation: pulse 2s infinite;
+            }}
+            @keyframes pulse {{
+                0% {{ box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }}
+                70% {{ box-shadow: 0 0 0 20px rgba(52, 211, 153, 0); }}
+                100% {{ box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }}
+            }}
+            .status-text {{
+                font-family: 'Poppins', sans-serif;
+                color: #34d399;
+                font-size: 26px;
+                font-weight: 800;
+                margin: 0 0 6px 0;
+                letter-spacing: 1px;
+            }}
+            .system-text {{
+                color: #5d5875;
+                font-size: 13px;
+                margin: 0 0 32px 0;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                font-weight: 600;
+            }}
+            .detail-box {{
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 16px;
+                padding: 16px 20px;
+                text-align: left;
+            }}
+            .detail-row {{
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 14px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            }}
+            .detail-row:last-child {{ border-bottom: none; padding-bottom: 0; }}
+            .detail-row:first-child {{ padding-top: 0; }}
+            .detail-label {{ 
+                color: #9b97ad; 
+                font-size: 13px; 
+                font-weight: 600; 
+                text-transform: uppercase; 
+                letter-spacing: 0.5px; 
+            }}
+            .detail-value {{ 
+                color: #f1f0f5; 
+                font-size: 15px; 
+                font-weight: 600; 
+                text-align: right; 
+                max-width: 60%;
+            }}
+            .highlight-value {{ color: #a855f7; font-weight: 700; }}
+        </style>
+    </head>
+    <body>
+        <div class="verify-card">
+            <div class="icon-wrap">✓</div>
+            <h1 class="status-text">ENTRY APPROVED</h1>
+            <p class="system-text">FlexSpace Security System</p>
+            
+            <div class="detail-box">
+                <div class="detail-row">
+                    <span class="detail-label">Resident</span>
+                    <span class="detail-value">{user['name']}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Flat No</span>
+                    <span class="detail-value">{flat_no}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Facility</span>
+                    <span class="detail-value highlight-value">{facility['emoji']} {facility_name}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Date</span>
+                    <span class="detail-value">{booking_date}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Time</span>
+                    <span class="detail-value">{time_slot}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Ref ID</span>
+                    <span class="detail-value" style="color: #6366f1;">{booking_ref}</span>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+
+# ═══════════════════════════════════════════════════════════
+#  SERVER-SENT EVENTS (SSE) — Real-Time Slot Updates
+# ═══════════════════════════════════════════════════════════
+
+@app.route('/api/stream/slots')
+def stream_slots():
+    """SSE endpoint: pushes updates when bookings change."""
+    def event_stream():
+        q = queue.Queue()
+        sse_clients.append(q)
+        try:
+            while True:
+                # Blocks until a message is put in the queue
+                msg = q.get()
+                yield f"data: {msg}\n\n"
+        finally:
+            # Clean up when the client disconnects
+            sse_clients.remove(q)
+
+    return Response(
+        event_stream(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no',
+            'Connection': 'keep-alive'
+        }
+    )
+
+
+# ═══════════════════════════════════════════════════════════
 #  STARTUP
 # ═══════════════════════════════════════════════════════════
 
@@ -448,4 +714,4 @@ if __name__ == '__main__':
     print("[*] Starting FlexSpace server...")
     seed()
     print("[*] Server running at http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
