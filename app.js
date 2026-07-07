@@ -124,75 +124,75 @@ const state = {
 // ─────────────────────────────────────────────
 //  DOM REFERENCES
 // ─────────────────────────────────────────────
-const $  = (sel) => document.querySelector(sel);
+const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
 const dom = {
-  navbar:          $('#navbar'),
-  navLinks:        $('#navLinks'),
-  hamburger:       $('#hamburger'),
-  navAuthButtons:  $('#navAuthButtons'),
-  navUserMenu:     $('#navUserMenu'),
-  userAvatarBtn:   $('#userAvatarBtn'),
+  navbar: $('#navbar'),
+  navLinks: $('#navLinks'),
+  hamburger: $('#hamburger'),
+  navAuthButtons: $('#navAuthButtons'),
+  navUserMenu: $('#navUserMenu'),
+  userAvatarBtn: $('#userAvatarBtn'),
   userAvatarInitial: $('#userAvatarInitial'),
   userNameDisplay: $('#userNameDisplay'),
-  userDropdown:    $('#userDropdown'),
-  navDashboardLink:$('#navDashboardLink'),
-  facilitiesGrid:  $('#facilitiesGrid'),
-  scheduleHeader:  $('#scheduleHeader'),
-  scheduleEye:     $('#scheduleEyebrow'),
-  dayTabs:         $('#dayTabs'),
-  tabToday:        $('#tabToday'),
-  tabTomorrow:     $('#tabTomorrow'),
-  slotsGrid:       $('#slotsGrid'),
-  slotsLegend:     $('#slotsLegend'),
-  btnBack:         $('#btnBack'),
+  userDropdown: $('#userDropdown'),
+  navDashboardLink: $('#navDashboardLink'),
+  facilitiesGrid: $('#facilitiesGrid'),
+  scheduleHeader: $('#scheduleHeader'),
+  scheduleEye: $('#scheduleEyebrow'),
+  dayTabs: $('#dayTabs'),
+  tabToday: $('#tabToday'),
+  tabTomorrow: $('#tabTomorrow'),
+  slotsGrid: $('#slotsGrid'),
+  slotsLegend: $('#slotsLegend'),
+  btnBack: $('#btnBack'),
   // Booking confirmation modal
-  modalOverlay:    $('#modalOverlay'),
-  modalClose:      $('#modalClose'),
-  modalMeta:       $('#modalMeta'),
+  modalOverlay: $('#modalOverlay'),
+  modalClose: $('#modalClose'),
+  modalMeta: $('#modalMeta'),
   btnConfirmBooking: $('#btnConfirmBooking'),
   // Unit selection modal
-  unitModalOverlay:$('#unitModalOverlay'),
-  unitModalClose:  $('#unitModalClose'),
-  unitModalIcon:   $('#unitModalIcon'),
-  unitModalTitle:  $('#unitModalTitle'),
-  unitModalMeta:   $('#unitModalMeta'),
-  unitSelector:    $('#unitSelector'),
+  unitModalOverlay: $('#unitModalOverlay'),
+  unitModalClose: $('#unitModalClose'),
+  unitModalIcon: $('#unitModalIcon'),
+  unitModalTitle: $('#unitModalTitle'),
+  unitModalMeta: $('#unitModalMeta'),
+  unitSelector: $('#unitSelector'),
   // Login modal
-  loginModalOverlay:  $('#loginModalOverlay'),
-  loginModalClose:    $('#loginModalClose'),
-  loginForm:          $('#loginForm'),
-  loginEmail:         $('#loginEmail'),
-  loginPassword:      $('#loginPassword'),
-  loginError:         $('#loginError'),
+  loginModalOverlay: $('#loginModalOverlay'),
+  loginModalClose: $('#loginModalClose'),
+  loginForm: $('#loginForm'),
+  loginEmail: $('#loginEmail'),
+  loginPassword: $('#loginPassword'),
+  loginError: $('#loginError'),
   // Register modal
   registerModalOverlay: $('#registerModalOverlay'),
-  registerModalClose:   $('#registerModalClose'),
-  registerForm:         $('#registerForm'),
-  registerName:         $('#registerName'),
-  registerFlatNo:       $('#registerFlatNo'),
-  registerEmail:        $('#registerEmail'),
-  registerPassword:     $('#registerPassword'),
-  registerError:        $('#registerError'),
+  registerModalClose: $('#registerModalClose'),
+  registerForm: $('#registerForm'),
+  registerName: $('#registerName'),
+  registerFlatNo: $('#registerFlatNo'),
+  registerEmail: $('#registerEmail'),
+  registerPassword: $('#registerPassword'),
+  registerError: $('#registerError'),
   // Dashboard
   dashboardSection: $('#dashboard'),
-  dashboardGrid:    $('#dashboardGrid'),
-  dashboardEmpty:   $('#dashboardEmpty'),
+  dashboardGrid: $('#dashboardGrid'),
+  dashboardEmpty: $('#dashboardEmpty'),
   // Toast
-  toast:         $('#toast'),
-  toastMsg:      $('#toastMsg'),
-  toastError:    $('#toastError'),
+  toast: $('#toast'),
+  toastMsg: $('#toastMsg'),
+  toastError: $('#toastError'),
   toastErrorMsg: $('#toastErrorMsg'),
   // QR Gate Pass modal
-  qrModalOverlay:  $('#qrModalOverlay'),
-  qrModalClose:    $('#qrModalClose'),
-  qrImage:         $('#qrImage'),
-  qrModalTitle:    $('#qrModalTitle'),
-  qrModalMeta:     $('#qrModalMeta'),
-  qrPassDetails:   $('#qrPassDetails'),
+  qrModalOverlay: $('#qrModalOverlay'),
+  qrModalClose: $('#qrModalClose'),
+  qrImage: $('#qrImage'),
+  qrModalTitle: $('#qrModalTitle'),
+  qrModalMeta: $('#qrModalMeta'),
+  qrPassDetails: $('#qrPassDetails'),
   // Live badge
-  liveBadge:       $('#liveBadge')
+  liveBadge: $('#liveBadge')
 };
 
 
@@ -485,21 +485,52 @@ function closeSchedule() {
 //  TIME SLOTS — Fetch & Render
 // ─────────────────────────────────────────────
 
-async function fetchAndRenderSlots() {
+// Add "isPolling = false" to the parameters
+// Add "isPolling = false" to the parameters for silent background updates
+// Add this variable to keep track of the last data we saw
+let lastSlotsHash = "";
+
+async function fetchAndRenderSlots(isPolling = false) {
   if (!state.activeUnit) return;
 
   const date = getDateKey(state.activeDay);
 
-  // Show loading state
-  dom.slotsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">Loading slots...</div>';
+  // Only show the loading state if this is a manual user click
+  if (!isPolling) {
+    dom.slotsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">Loading slots...</div>';
+  }
 
   try {
     const data = await API.get(`/api/facilities/${state.activeUnit.id}/slots?date=${date}`);
-    state.slots = data.slots || [];
-    renderSlots();
+    const newSlots = data.slots || [];
+
+    // --- THE FLICKER FIX ---
+    // Convert the new slots to a string to easily compare them
+    const currentHash = JSON.stringify(newSlots);
+
+    // If this is a background poll AND the data hasn't changed at all, STOP here.
+    // Do not touch the DOM. Do not redraw the grid.
+    if (isPolling && currentHash === lastSlotsHash) {
+      return;
+    }
+
+    // If we made it here, the data IS different (or it's a manual click).
+    // Save the new data and the new hash.
+    state.slots = newSlots;
+    lastSlotsHash = currentHash;
+    // -----------------------
+
+    if (state.slots.length === 0) {
+      dom.slotsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">No slots available for this date.</div>';
+    } else {
+      // Now it only redraws the screen if something actually changed!
+      renderSlots();
+    }
   } catch (err) {
     console.error('Failed to load slots:', err);
-    dom.slotsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:#ef4444;">Failed to load slots. Please try again.</div>';
+    if (!isPolling) {
+      dom.slotsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:#ef4444;">Failed to load slots. Please try again.</div>';
+    }
   }
 }
 
@@ -554,7 +585,7 @@ function selectSlot(el) {
   }
 
   const start = parseInt(el.dataset.start, 10);
-  const end   = parseInt(el.dataset.end, 10);
+  const end = parseInt(el.dataset.end, 10);
   const label = el.dataset.label;
 
   state.selectedSlot = { start, end, label };
@@ -690,9 +721,9 @@ function renderDashboardBookings(bookings) {
   dom.dashboardGrid.querySelectorAll('.btn-qr').forEach(btn => {
     btn.addEventListener('click', () => {
       const bookingId = btn.dataset.qrId;
-      const facility  = btn.dataset.qrFacility;
-      const dateStr   = btn.dataset.qrDate;
-      const label     = btn.dataset.qrLabel;
+      const facility = btn.dataset.qrFacility;
+      const dateStr = btn.dataset.qrDate;
+      const label = btn.dataset.qrLabel;
       openQRModal(bookingId, facility, dateStr, label);
     });
   });
@@ -829,7 +860,7 @@ function initGSAPAnimations() {
   const heroTL = gsap.timeline({ delay: 0.3 });
 
   heroTL
-    .to('#heroTagline',  { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 0)
+    .to('#heroTagline', { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 0)
     .fromTo('#heroTitle',
       { opacity: 0, y: 40 },
       { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, 0.15)
@@ -1079,49 +1110,21 @@ function initSpotlightCards() {
 
 
 // ─────────────────────────────────────────────
-//  REAL-TIME SLOTS — SSE (Server-Sent Events)
+//  REAL-TIME SLOTS — Short-Polling (Vercel Serverless)
 // ─────────────────────────────────────────────
 function initLiveSlots() {
-  // Graceful check — SSE not supported in all environments
-  if (typeof EventSource === 'undefined') return;
+  // Show the live badge immediately so the UI looks connected
+  if (dom.liveBadge) dom.liveBadge.style.display = 'inline-flex';
 
-  let evtSource = null;
+  // Poll every 3 seconds for slot updates
+  setInterval(() => {
+    if (dom.scheduleHeader && dom.scheduleHeader.style.display !== 'none' && state.activeUnit) {
 
-  function connect() {
-    evtSource = new EventSource('/api/stream/slots');
+      // Pass 'true' here to tell the function it is a background poll!
+      fetchAndRenderSlots(true);
 
-    evtSource.onopen = () => {
-      // Show the live badge when connected
-      if (dom.liveBadge) dom.liveBadge.style.display = 'inline-flex';
-    };
-
-    evtSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.updated) {
-          // Only re-fetch if the schedule view is currently visible
-          if (dom.scheduleHeader && dom.scheduleHeader.style.display !== 'none' && state.activeUnit) {
-            fetchAndRenderSlots();
-          }
-        }
-      } catch (err) {
-        console.warn('[SSE] Failed to parse message:', err);
-      }
-    };
-
-    evtSource.onerror = () => {
-      // Hide live badge on error
-      if (dom.liveBadge) dom.liveBadge.style.display = 'none';
-      // EventSource auto-reconnects, but close if readyState is CLOSED
-      if (evtSource.readyState === EventSource.CLOSED) {
-        evtSource.close();
-        // Retry connection after 5 seconds
-        setTimeout(connect, 5000);
-      }
-    };
-  }
-
-  connect();
+    }
+  }, 3000);
 }
 
 
