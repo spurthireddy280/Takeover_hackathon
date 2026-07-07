@@ -720,6 +720,76 @@ body {
   opacity: 0.7;
 }
 
+/* 3D GLB Models — Flanking hero content */
+.hero-3d-model {
+  position: absolute;
+  width: 340px;
+  height: 380px;
+  pointer-events: none;
+  z-index: 1;
+  filter: drop-shadow(0 0 40px rgba(168, 85, 247, 0.15));
+}
+
+.hero-3d-model canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.hero-3d-left {
+  left: 1%;
+  top: 12%;
+}
+
+.hero-3d-right {
+  right: 1%;
+  top: 12%;
+}
+
+.hero-3d-bottom-left {
+  left: 6%;
+  bottom: 3%;
+  width: 280px;
+  height: 300px;
+}
+
+.hero-3d-bottom-right {
+  right: 6%;
+  bottom: 3%;
+  width: 280px;
+  height: 300px;
+}
+
+/* Hide 3D models on smaller screens where they'd overlap text */
+@media (max-width: 1400px) {
+  .hero-3d-model {
+    width: 280px;
+    height: 320px;
+  }
+  .hero-3d-bottom-left,
+  .hero-3d-bottom-right {
+    width: 220px;
+    height: 250px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .hero-3d-model {
+    width: 220px;
+    height: 260px;
+    opacity: 0.7;
+  }
+  .hero-3d-bottom-left,
+  .hero-3d-bottom-right {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero-3d-model {
+    display: none;
+  }
+}
+
 /* Hero content */
 .hero-content {
   position: relative;
