@@ -410,12 +410,19 @@ def cancel_my_booking(booking_id):
 @app.route('/api/admin/bookings')
 @admin_required
 def admin_all_bookings():
-    """Admin: get all bookings for a given date."""
-    date_str = request.args.get('date')
-    if not date_str:
-        date_str = date.today().isoformat()
-
-    bookings = get_all_bookings_for_date(date_str)
+    # Fetch ALL confirmed bookings, ignoring the date query
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT b.*, u.name as user_name, u.email as user_email, u.flat_no as user_flat_no,
+               f.name as facility_name, f.emoji as facility_emoji,
+               f.parent_id, pf.name as parent_name, pf.emoji as parent_emoji
+        FROM bookings b JOIN users u ON b.user_id = u.id JOIN facilities f ON b.facility_id = f.id
+        LEFT JOIN facilities pf ON f.parent_id = pf.id
+        WHERE b.status = 'confirmed' ORDER BY b.date DESC, b.start_time DESC
+    """).fetchall()
+    conn.close()
+    bookings = [dict(r) for r in rows]
+    # ... keep the rest of your formatting loop exactly the same
 
     result = []
     for b in bookings:
