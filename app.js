@@ -1181,46 +1181,6 @@ function initSpotlightCards() {
 }
 
 
-// ─────────────────────────────────────────────
-//  MAGNET BUTTON — Cursor-proximity pull effect
-// ─────────────────────────────────────────────
-function initMagnetEffects() {
-  const magnetPadding = 100;    // px distance threshold
-  const magnetStrength = 2;     // divisor — higher = subtler pull
-
-  // Collect all magnet targets
-  function getMagnetTargets() {
-    return [
-      ...document.querySelectorAll('.btn-glow'),
-      ...document.querySelectorAll('.user-avatar-btn')
-    ];
-  }
-
-  document.addEventListener('mousemove', (e) => {
-    const targets = getMagnetTargets();
-
-    targets.forEach((btn) => {
-      const rect = btn.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top  + rect.height / 2;
-      const distX = Math.abs(centerX - e.clientX);
-      const distY = Math.abs(centerY - e.clientY);
-
-      if (distX < rect.width / 2 + magnetPadding && distY < rect.height / 2 + magnetPadding) {
-        // Cursor is within the magnetic field
-        const offsetX = (e.clientX - centerX) / magnetStrength;
-        const offsetY = (e.clientY - centerY) / magnetStrength;
-        btn.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 0)`;
-        btn.style.transition = 'transform 0.15s ease-out';
-      } else {
-        // Outside the threshold — spring back smoothly
-        btn.style.transform = 'translate3d(0, 0, 0)';
-        btn.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
-      }
-    });
-  });
-}
-
 
 // ─────────────────────────────────────────────
 //  REAL-TIME SLOTS — SSE (Server-Sent Events)
@@ -1279,7 +1239,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initActiveNavLink();
   initHamburger();
   initOrbCanvas();
-  initMagnetEffects();
   initLiveSlots();
 
   // Check auth session
