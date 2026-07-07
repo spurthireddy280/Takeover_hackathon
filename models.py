@@ -6,7 +6,7 @@ SQLite relational schema with Users, Facilities, and Bookings.
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flexspace.db')
+DB_PATH = '/tmp/flexspace.db'
 
 
 def get_db():
