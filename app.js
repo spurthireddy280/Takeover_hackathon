@@ -183,7 +183,16 @@ const dom = {
   toast:         $('#toast'),
   toastMsg:      $('#toastMsg'),
   toastError:    $('#toastError'),
-  toastErrorMsg: $('#toastErrorMsg')
+  toastErrorMsg: $('#toastErrorMsg'),
+  // QR Gate Pass modal
+  qrModalOverlay:  $('#qrModalOverlay'),
+  qrModalClose:    $('#qrModalClose'),
+  qrImage:         $('#qrImage'),
+  qrModalTitle:    $('#qrModalTitle'),
+  qrModalMeta:     $('#qrModalMeta'),
+  qrPassDetails:   $('#qrPassDetails'),
+  // Live badge
+  liveBadge:       $('#liveBadge')
 };
 
 
@@ -352,6 +361,9 @@ function renderFacilityCards() {
       handleFacilityClick(fId);
     });
   });
+
+  // Attach spotlight mousemove listeners to dynamically rendered cards
+  initSpotlightCards();
 }
 
 
@@ -658,6 +670,10 @@ function renderDashboardBookings(bookings) {
         </div>
       </div>
       <div class="booking-card__actions">
+        <button class="btn btn-outline btn-sm btn-qr" data-qr-id="${b.id}" data-qr-facility="${b.facility_emoji} ${b.facility_name}" data-qr-date="${b.date}" data-qr-label="${b.label}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><line x1="21" y1="14" x2="21" y2="14.01"/><line x1="21" y1="21" x2="21" y2="21.01"/><line x1="14" y1="21" x2="14" y2="21.01"/></svg>
+          Gate Pass
+        </button>
         <button class="btn btn-danger btn-sm" data-cancel-id="${b.id}">
           Cancel Booking
         </button>
@@ -668,6 +684,17 @@ function renderDashboardBookings(bookings) {
   // Attach cancel handlers
   dom.dashboardGrid.querySelectorAll('[data-cancel-id]').forEach(btn => {
     btn.addEventListener('click', () => cancelMyBooking(parseInt(btn.dataset.cancelId, 10)));
+  });
+
+  // Attach QR gate pass handlers
+  dom.dashboardGrid.querySelectorAll('.btn-qr').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const bookingId = btn.dataset.qrId;
+      const facility  = btn.dataset.qrFacility;
+      const dateStr   = btn.dataset.qrDate;
+      const label     = btn.dataset.qrLabel;
+      openQRModal(bookingId, facility, dateStr, label);
+    });
   });
 
   // Animate cards
@@ -696,6 +723,45 @@ async function cancelMyBooking(bookingId) {
 
 
 // ─────────────────────────────────────────────
+//  QR GATE PASS MODAL
+// ─────────────────────────────────────────────
+function openQRModal(bookingId, facilityName, dateStr, timeLabel) {
+  dom.qrModalMeta.textContent = `${facilityName}`;
+  dom.qrImage.src = `/api/bookings/${bookingId}/qr`;
+  dom.qrImage.alt = `Gate Pass QR — ${facilityName}`;
+
+  dom.qrPassDetails.innerHTML = `
+    <div class="qr-detail-row">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>${formatDate(dateStr)}</span>
+    </div>
+    <div class="qr-detail-row">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>${timeLabel}</span>
+    </div>
+  `;
+
+  openModalOverlay(dom.qrModalOverlay);
+
+  // GSAP pulse animation on QR image border
+  requestAnimationFrame(() => {
+    if (window.gsap) {
+      gsap.fromTo('.qr-image-wrap',
+        { boxShadow: '0 0 0px rgba(168, 85, 247, 0.3)' },
+        {
+          boxShadow: '0 0 28px rgba(168, 85, 247, 0.5)',
+          repeat: -1,
+          yoyo: true,
+          duration: 1.5,
+          ease: 'sine.inOut'
+        }
+      );
+    }
+  });
+}
+
+
+// ─────────────────────────────────────────────
 //  MODAL MANAGEMENT
 // ─────────────────────────────────────────────
 
@@ -716,7 +782,7 @@ function closeModal(overlay) {
 }
 
 function closeAllModals() {
-  [dom.modalOverlay, dom.unitModalOverlay, dom.loginModalOverlay, dom.registerModalOverlay].forEach(m => {
+  [dom.modalOverlay, dom.unitModalOverlay, dom.loginModalOverlay, dom.registerModalOverlay, dom.qrModalOverlay].forEach(m => {
     m.classList.remove('visible');
   });
   document.body.style.overflow = '';
@@ -1014,6 +1080,19 @@ function bindEvents() {
   });
   dom.registerForm.addEventListener('submit', handleRegister);
 
+  // QR Gate Pass modal
+  dom.qrModalClose.addEventListener('click', () => {
+    closeModal(dom.qrModalOverlay);
+    // Kill any running GSAP animation on the QR wrap
+    if (window.gsap) gsap.killTweensOf('.qr-image-wrap');
+  });
+  dom.qrModalOverlay.addEventListener('click', (e) => {
+    if (e.target === dom.qrModalOverlay) {
+      closeModal(dom.qrModalOverlay);
+      if (window.gsap) gsap.killTweensOf('.qr-image-wrap');
+    }
+  });
+
   // Auth navigation buttons
   $('#btnOpenLogin').addEventListener('click', () => {
     openModalOverlay(dom.loginModalOverlay);
@@ -1076,6 +1155,121 @@ function switchDay(day) {
 
 
 // ─────────────────────────────────────────────
+//  SPOTLIGHT CARD — Mouse-tracking reveal effect
+// ─────────────────────────────────────────────
+function initSpotlightCards() {
+  const cards = $$('.facility-card');
+  cards.forEach((card) => {
+    // Prevent duplicate listeners by marking
+    if (card._spotlightBound) return;
+    card._spotlightBound = true;
+
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      card.style.setProperty('--mouse-x', `${x}px`);
+      card.style.setProperty('--mouse-y', `${y}px`);
+    });
+
+    card.addEventListener('mouseleave', () => {
+      // Reset to center so the pseudo-element fades gracefully
+      card.style.setProperty('--mouse-x', '50%');
+      card.style.setProperty('--mouse-y', '50%');
+    });
+  });
+}
+
+
+// ─────────────────────────────────────────────
+//  MAGNET BUTTON — Cursor-proximity pull effect
+// ─────────────────────────────────────────────
+function initMagnetEffects() {
+  const magnetPadding = 100;    // px distance threshold
+  const magnetStrength = 2;     // divisor — higher = subtler pull
+
+  // Collect all magnet targets
+  function getMagnetTargets() {
+    return [
+      ...document.querySelectorAll('.btn-glow'),
+      ...document.querySelectorAll('.user-avatar-btn')
+    ];
+  }
+
+  document.addEventListener('mousemove', (e) => {
+    const targets = getMagnetTargets();
+
+    targets.forEach((btn) => {
+      const rect = btn.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top  + rect.height / 2;
+      const distX = Math.abs(centerX - e.clientX);
+      const distY = Math.abs(centerY - e.clientY);
+
+      if (distX < rect.width / 2 + magnetPadding && distY < rect.height / 2 + magnetPadding) {
+        // Cursor is within the magnetic field
+        const offsetX = (e.clientX - centerX) / magnetStrength;
+        const offsetY = (e.clientY - centerY) / magnetStrength;
+        btn.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 0)`;
+        btn.style.transition = 'transform 0.15s ease-out';
+      } else {
+        // Outside the threshold — spring back smoothly
+        btn.style.transform = 'translate3d(0, 0, 0)';
+        btn.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
+      }
+    });
+  });
+}
+
+
+// ─────────────────────────────────────────────
+//  REAL-TIME SLOTS — SSE (Server-Sent Events)
+// ─────────────────────────────────────────────
+function initLiveSlots() {
+  // Graceful check — SSE not supported in all environments
+  if (typeof EventSource === 'undefined') return;
+
+  let evtSource = null;
+
+  function connect() {
+    evtSource = new EventSource('/api/stream/slots');
+
+    evtSource.onopen = () => {
+      // Show the live badge when connected
+      if (dom.liveBadge) dom.liveBadge.style.display = 'inline-flex';
+    };
+
+    evtSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.updated) {
+          // Only re-fetch if the schedule view is currently visible
+          if (dom.scheduleHeader && dom.scheduleHeader.style.display !== 'none' && state.activeUnit) {
+            fetchAndRenderSlots();
+          }
+        }
+      } catch (err) {
+        console.warn('[SSE] Failed to parse message:', err);
+      }
+    };
+
+    evtSource.onerror = () => {
+      // Hide live badge on error
+      if (dom.liveBadge) dom.liveBadge.style.display = 'none';
+      // EventSource auto-reconnects, but close if readyState is CLOSED
+      if (evtSource.readyState === EventSource.CLOSED) {
+        evtSource.close();
+        // Retry connection after 5 seconds
+        setTimeout(connect, 5000);
+      }
+    };
+  }
+
+  connect();
+}
+
+
+// ─────────────────────────────────────────────
 //  INITIALISATION
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1085,11 +1279,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   initActiveNavLink();
   initHamburger();
   initOrbCanvas();
+  initMagnetEffects();
+  initLiveSlots();
 
   // Check auth session
   await checkAuth();
 
-  // Load facilities from API
+  // Load facilities from API (also initialises spotlight cards)
   await loadFacilities();
 
   // Wait for GSAP to load (deferred script)

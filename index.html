@@ -163,7 +163,7 @@
         </button>
         <div class="schedule-title-group">
           <p class="section-eyebrow" id="scheduleEyebrow">Badminton Court</p>
-          <h2 class="section-title">Select a <span class="gradient-text">Time Slot</span></h2>
+          <h2 class="section-title">Select a <span class="gradient-text">Time Slot</span> <span class="live-badge" id="liveBadge" style="display:none;"><span class="live-dot"></span> Live</span></h2>
         </div>
       </div>
 
@@ -320,6 +320,27 @@
       <p class="modal-switch">
         Already have an account? <button type="button" class="link-btn" id="switchToLogin">Sign In</button>
       </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       QR CODE GATE PASS MODAL
+  ═══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="qrModalOverlay">
+    <div class="modal glass-card" id="qrModal" role="dialog" aria-labelledby="qrModalTitle">
+      <button class="modal-close" id="qrModalClose" aria-label="Close modal">✕</button>
+      <div class="modal-header">
+        <span class="modal-icon">🎫</span>
+        <h3 id="qrModalTitle">Gate Pass</h3>
+        <p class="modal-meta" id="qrModalMeta">Your digital entry pass</p>
+      </div>
+      <div class="qr-pass-body">
+        <div class="qr-image-wrap">
+          <img id="qrImage" class="qr-image" alt="Gate Pass QR Code" />
+        </div>
+        <div class="qr-pass-details" id="qrPassDetails"></div>
+        <p class="qr-pass-hint">Show this QR code at the facility entrance</p>
+      </div>
     </div>
   </div>
 
