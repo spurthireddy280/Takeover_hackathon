@@ -814,111 +814,7 @@ function showToastError(message) {
 //  3D ORB — Canvas Animated Background
 // ─────────────────────────────────────────────
 
-function initOrbCanvas() {
-  const canvas = document.getElementById('orbCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
 
-  let W, H, cx, cy, frame = 0;
-  const particles = [];
-  const PARTICLE_COUNT = 60;
-
-  function resize() {
-    const rect = canvas.parentElement.getBoundingClientRect();
-    W = canvas.width  = Math.min(500, rect.width * 0.6);
-    H = canvas.height = W;
-    cx = W / 2;
-    cy = H / 2;
-  }
-
-  // Create orbiting particles
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    particles.push({
-      angle: Math.random() * Math.PI * 2,
-      radius: 80 + Math.random() * 120,
-      speed: 0.003 + Math.random() * 0.008,
-      size: 1 + Math.random() * 2.5,
-      opacity: 0.2 + Math.random() * 0.6,
-      offsetY: (Math.random() - 0.5) * 60
-    });
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-    frame++;
-
-    const light = isLightMode();
-
-    // ── Core orb glow (pulsing) ──
-    const pulse = Math.sin(frame * 0.015) * 0.1 + 0.9;
-    const orbR = (W * 0.28) * pulse;
-
-    // Outer glow
-    const glow = ctx.createRadialGradient(cx, cy, orbR * 0.3, cx, cy, orbR * 1.6);
-    glow.addColorStop(0, light ? 'rgba(139, 92, 246, 0.2)' : 'rgba(168, 85, 247, 0.15)');
-    glow.addColorStop(0.5, light ? 'rgba(99, 102, 241, 0.08)' : 'rgba(99, 102, 241, 0.06)');
-    glow.addColorStop(1, 'rgba(59, 130, 246, 0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, W, H);
-
-    // Main orb gradient
-    const grad = ctx.createRadialGradient(cx - orbR * 0.25, cy - orbR * 0.25, orbR * 0.1, cx, cy, orbR);
-    grad.addColorStop(0, light ? 'rgba(139, 92, 246, 0.5)' : 'rgba(200, 140, 255, 0.55)');
-    grad.addColorStop(0.4, light ? 'rgba(99, 102, 241, 0.3)' : 'rgba(140, 100, 240, 0.35)');
-    grad.addColorStop(0.7, light ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.2)');
-    grad.addColorStop(1, 'rgba(59, 130, 246, 0)');
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, orbR, 0, Math.PI * 2);
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // Inner bright core
-    const core = ctx.createRadialGradient(cx - orbR * 0.15, cy - orbR * 0.15, 0, cx, cy, orbR * 0.5);
-    core.addColorStop(0, light ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255, 255, 255, 0.25)');
-    core.addColorStop(1, light ? 'rgba(139, 92, 246, 0)' : 'rgba(255, 255, 255, 0)');
-    ctx.beginPath();
-    ctx.arc(cx, cy, orbR * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = core;
-    ctx.fill();
-
-    // ── Orbiting particles ──
-    particles.forEach(p => {
-      p.angle += p.speed;
-      const px = cx + Math.cos(p.angle) * p.radius;
-      const py = cy + Math.sin(p.angle) * p.radius * 0.45 + p.offsetY;
-      const dist = Math.sqrt((px - cx) ** 2 + (py - cy) ** 2);
-
-      // Fade particles that are behind the orb
-      const behindOrb = Math.sin(p.angle) > 0.2 ? 0.3 : 1;
-      const alpha = p.opacity * behindOrb * Math.max(0.3, 1 - dist / (W * 0.5));
-
-      ctx.beginPath();
-      ctx.arc(px, py, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = light ? `rgba(139, 92, 246, ${alpha})` : `rgba(200, 170, 255, ${alpha})`;
-      ctx.fill();
-    });
-
-    // ── Orbiting ring ──
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(frame * 0.003);
-    ctx.scale(1, 0.35);
-    ctx.beginPath();
-    ctx.arc(0, 0, orbR * 1.3, 0, Math.PI * 2);
-    const ringAlpha = 0.08 + Math.sin(frame * 0.02) * 0.04;
-    ctx.strokeStyle = light ? `rgba(139, 92, 246, ${ringAlpha + 0.06})` : `rgba(168, 85, 247, ${ringAlpha})`;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.restore();
-
-    requestAnimationFrame(draw);
-  }
-
-  resize();
-  window.addEventListener('resize', resize);
-  draw();
-}
 
 
 // ─────────────────────────────────────────────
@@ -1238,7 +1134,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initNavbarScroll();
   initActiveNavLink();
   initHamburger();
-  initOrbCanvas();
   initLiveSlots();
 
   // Check auth session
